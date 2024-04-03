@@ -36,8 +36,11 @@ their similarity. If the last frame of A is similar to the first frame of B, A a
 frames is determined using [vitali-fedulov/images4](https://github.com/vitali-fedulov/images4).
 
 Video segments are joined using [mp4-merge](https://github.com/gyroflow/mp4-merge). If this is already present in
-your `$PATH` it will be used, otherwise
-it will be downloaded automatically to `/tmp/dji-automerge`.
+your `$PATH` it will be used, otherwise it will be downloaded automatically to `/tmp/dji-automerge`.
+
+The resulting joined video files are saved to `<output>/`.
+
+After joining the video segments, the original files are moved to `<output>/Sources/`.
 
 # Dependencies
 
