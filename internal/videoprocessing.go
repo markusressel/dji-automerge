@@ -268,7 +268,7 @@ func getLastFrame(file string) (string, error) {
 
 	targetPath := tmpDir + "/" + filename
 
-	_, err := util.ExecCommand("ffmpeg", "-sseof", "-0.3", "-i", file, "-vsync", "0", "-q:v", "31", "-update", "true", targetPath)
+	_, err := util.ExecCommand("ffmpeg", "-sseof", "-0.6", "-i", file, "-vsync", "0", "-q:v", "31", "-update", "true", targetPath)
 	return targetPath, err
 }
 
