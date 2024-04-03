@@ -88,7 +88,12 @@ func moveSourceFilesInGroup(group VideoGroup, path string) error {
 }
 
 func joinVideosInGroup(group VideoGroup, path string) error {
-	fmt.Printf("Joining videos: %v", group.Parts)
+	partNames := make([]string, 0)
+	for _, part := range group.Parts {
+		partNames = append(partNames, part.Name)
+	}
+	fmt.Printf("Joining videos: %v\n", partNames)
+
 	outputFileName := group.Parts[0].Path
 	outputFileName = outputFileName[:len(outputFileName)-4] + "_merged.mp4"
 
@@ -125,15 +130,15 @@ func mergeVideos(name string, parts []VideoData) error {
 func getMp4MergeBinaryPath() (string, error) {
 	// check if mp4-merge exists
 	mp4BinaryFileNameFromPackage := "mp4-merge"
-	path, err := util.ExecCommand("which", mp4BinaryFileNameFromPackage)
+	pathToMp4Merge, err := util.ExecCommand("which", mp4BinaryFileNameFromPackage)
 	if err == nil {
-		return path, nil
+		return pathToMp4Merge, nil
 	}
 
-	pathToMp4Merge := filepath.Join(tmpDir, Mp4BinaryFileName)
+	pathToMp4Merge = filepath.Join(tmpDir, Mp4BinaryFileName)
 	info, err := os.Stat(pathToMp4Merge)
 	if err == nil && !info.IsDir() {
-		return path, nil
+		return pathToMp4Merge, nil
 	}
 
 	fmt.Printf("mp4-merge not found, downloading to %v...\n", tmpDir)
@@ -141,9 +146,8 @@ func getMp4MergeBinaryPath() (string, error) {
 	if err != nil {
 		return "", err
 	} else {
-		path = pathToMp4Merge
+		return pathToMp4Merge, nil
 	}
-	return path, nil
 }
 
 func downloadMp4Merge(targetPath string) error {
@@ -168,6 +172,7 @@ type VideoGroup struct {
 
 type VideoData struct {
 	Path       string
+	Name       string
 	Size       int64
 	FirstFrame string
 	LastFrame  string
@@ -198,6 +203,7 @@ func matchInputFiles(files []string) ([]VideoGroup, error) {
 		}
 		videoData := VideoData{
 			Path:       file,
+			Name:       filepath.Base(file),
 			Size:       fileInfo.Size(),
 			FirstFrame: firstFrameFile,
 			LastFrame:  lastFrameFile,
@@ -224,13 +230,13 @@ func matchInputFiles(files []string) ([]VideoGroup, error) {
 			} else {
 				currentVideoGroup.Parts = append(currentVideoGroup.Parts, nextVideoData)
 			}
-			fmt.Printf("Found match for %v and %v", currentVideoData, nextVideoData)
+			fmt.Printf("Found match for '%v' and '%v'\n", currentVideoData.Name, nextVideoData.Name)
 		} else {
 			if currentVideoGroup != nil {
 				result = append(result, *currentVideoGroup)
 				currentVideoGroup = nil
 			}
-			fmt.Printf("No match!")
+			fmt.Printf("No matc between '%v' and '%v'\n", currentVideoData.Name, nextVideoData.Name)
 		}
 	}
 	if currentVideoGroup != nil {
@@ -281,11 +287,10 @@ func getLastFrame(file string) (string, error) {
 	}
 
 	sseof := 0.3
-
 	for sseof < 3.0 {
 		sseofStr := strconv.FormatFloat(sseof, 'f', -1, 64)
 		sseofStr = "-" + sseofStr
-		_, err = util.ExecCommand("ffmpeg", "-sseof", sseofStr, "-i", file, "-vsync", "0", "-q:v", "31", "-update", "true", targetPath)
+		_, err = util.ExecCommand("ffmpeg", "-y", "-sseof", sseofStr, "-i", file, "-vsync", "0", "-q:v", "31", "-update", "true", targetPath)
 		_, statErr := os.Stat(targetPath)
 		if err != nil || statErr != nil {
 			sseof += 0.2
