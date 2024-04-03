@@ -38,16 +38,18 @@ func Process(inputPath string, outputPath string) error {
 		return err
 	}
 
-	fmt.Printf("Joining %v videos\n", len(matchingVideos))
-	err = joinVideos(matchingVideos, outputPath)
-	if err != nil {
-		return err
-	}
+	for _, group := range matchingVideos {
+		fmt.Printf("Joining %v videos\n", len(group.Parts))
+		err = joinVideosInGroup(group, outputPath)
+		if err != nil {
+			return err
+		}
 
-	fmt.Printf("Moving source files to %v\n", outputPath)
-	err = moveSourceFiles(matchingVideos, outputPath)
-	if err != nil {
-		return err
+		fmt.Printf("Moving source files to %v\n", outputPath)
+		err = moveSourceFilesInGroup(group, outputPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	// cleanup
@@ -64,42 +66,34 @@ func removeTmpDir(path string) (string, error) {
 	return util.ExecCommand("rm", "-r", path)
 }
 
-func moveSourceFiles(groups []VideoGroup, path string) error {
+func moveSourceFilesInGroup(group VideoGroup, path string) error {
 	sourcesPath := path + "/Sources"
-
-	if len(groups) <= 0 {
-		return nil
-	}
 
 	err := os.MkdirAll(sourcesPath, os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	for _, group := range groups {
-		for _, part := range group.Parts {
-			// move file to path
-			targetPath := sourcesPath + "/" + filepath.Base(part.Path)
+	for _, part := range group.Parts {
+		// move file to path
+		targetPath := sourcesPath + "/" + filepath.Base(part.Path)
 
-			err = os.Rename(part.Path, targetPath)
-			if err != nil {
-				return err
-			}
+		err = os.Rename(part.Path, targetPath)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func joinVideos(videos []VideoGroup, path string) error {
-	fmt.Printf("Joining videos: %v", videos)
-	for _, group := range videos {
-		outputFileName := group.Parts[0].Path
-		outputFileName = outputFileName[:len(outputFileName)-4] + "_merged.mp4"
+func joinVideosInGroup(group VideoGroup, path string) error {
+	fmt.Printf("Joining videos: %v", group.Parts)
+	outputFileName := group.Parts[0].Path
+	outputFileName = outputFileName[:len(outputFileName)-4] + "_merged.mp4"
 
-		err := mergeVideos(outputFileName, group.Parts)
-		if err != nil {
-			return err
-		}
+	err := mergeVideos(outputFileName, group.Parts)
+	if err != nil {
+		return err
 	}
 	return nil
 }
