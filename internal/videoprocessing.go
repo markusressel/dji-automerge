@@ -266,52 +266,6 @@ func compareImages(imagePath1, imagePath2 string) (int64, error) {
 	}
 }
 
-//
-//func compareImageFiles(frame1Path string, frame2Path string) (int64, error) {
-//	f1, err := readImageFile(frame1Path)
-//	if err != nil {
-//		return 0, err
-//	}
-//	f2, err := readImageFile(frame2Path)
-//	if err != nil {
-//		return 0, err
-//	}
-//
-//	return fastCompare(f1.(*image.RGBA), f2.(*image.RGBA))
-//}
-//
-//func fastCompare(img1, img2 *image.RGBA) (int64, error) {
-//	if img1.Bounds() != img2.Bounds() {
-//		return 0, fmt.Errorf("image bounds not equal: %+v, %+v", img1.Bounds(), img2.Bounds())
-//	}
-//
-//	accumError := int64(0)
-//
-//	for i := 0; i < len(img1.Pix); i++ {
-//		accumError += int64(sqDiffUInt8(img1.Pix[i], img2.Pix[i]))
-//	}
-//
-//	return int64(math.Sqrt(float64(accumError))), nil
-//}
-//
-//func sqDiffUInt8(x, y uint8) uint64 {
-//	d := uint64(x) - uint64(y)
-//	return d * d
-//}
-//
-//func readImageFile(frame string) (image.Image, error) {
-//	reader, err := os.Open(frame)
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//	defer reader.Close()
-//	m, _, err := image.Decode(reader)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return m, nil
-//}
-
 func getLastFrame(file string) (string, error) {
 	// get filename of targetPath
 	filename := filepath.Base(file)
