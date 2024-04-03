@@ -192,6 +192,7 @@ type VideoGroup struct {
 
 type VideoData struct {
 	Path       string
+	Size       int64
 	FirstFrame string
 	LastFrame  string
 }
@@ -214,8 +215,11 @@ func matchInputFiles(files []string) ([]VideoGroup, error) {
 			return nil, err
 		}
 
+		// get file size
+		fileInfo, err := os.Stat(file)
 		videoData := VideoData{
 			Path:       file,
+			Size:       fileInfo.Size(),
 			FirstFrame: firstFrameFile,
 			LastFrame:  lastFrameFile,
 		}
@@ -328,29 +332,27 @@ func compareImages(imagePath1, imagePath2 string) (int64, error) {
 //}
 
 func getLastFrame(file string) (string, error) {
-	// get filename of path
+	// get filename of targetPath
 	filename := filepath.Base(file)
 	filename = filename + ".lastFrame"
 	filename = filename + ".png"
 
-	path := TmpDir + "/" + filename
+	targetPath := TmpDir + "/" + filename
 
-	//ffmpeg -sseof -3 -i $inputFile -vsync 0 -q:v 31 -update true out.jpg
-	_, err := util.ExecCommand("ffmpeg", "-sseof", "-3", "-i", file, "-vsync", "0", "-q:v", "31", "-update", "true", path)
-	return path, err
+	_, err := util.ExecCommand("ffmpeg", "-sseof", "-0.3", "-i", file, "-vsync", "0", "-q:v", "31", "-update", "true", targetPath)
+	return targetPath, err
 }
 
 func getFirstFrame(file string) (string, error) {
-	// get filename of path
+	// get filename of targetPath
 	filename := filepath.Base(file)
 	filename = filename + ".firstFrame"
 	filename = filename + ".png"
 
-	path := TmpDir + "/" + filename
+	targetPath := TmpDir + "/" + filename
 
-	//ffmpeg -i input.mp4 -vf "scale=iw*sar:ih,setsar=1" -vframes 1 filename.png
-	_, err := util.ExecCommand("ffmpeg", "-i", file, "-vf", "scale=iw*sar:ih,setsar=1", "-vframes", "1", path)
-	return path, err
+	_, err := util.ExecCommand("ffmpeg", "-i", file, "-vf", "scale=iw*sar:ih,setsar=1", "-vframes", "1", targetPath)
+	return targetPath, err
 }
 
 func getInputFiles(path string) ([]string, error) {
