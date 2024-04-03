@@ -8,8 +8,8 @@ When you record a video with a DJI drone, the video is split into multiple parts
 most about 4GB in size. This is done to prevent data loss in case of a crash. However, later on this can be annoying
 when you want to work with the video files in your editing program of choice.
 
-While there are great tools to join video segments, like f.ex.
-gyroflow's [mp4-merge](https://github.com/gyroflow/mp4-merge)
+While there are great tools to join video segments (like f.ex.
+gyroflow's [mp4-merge](https://github.com/gyroflow/mp4-merge))
 they still require you to manually specify the parts of the video to join.
 
 This tool aims to automate this by automatically detecting and joining video files that belong to the same recording.
