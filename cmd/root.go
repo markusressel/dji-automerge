@@ -14,8 +14,8 @@ var Output string
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "dji-automerge",
-	Short: "Automatically join video parts.",
-	Long:  `Automatically join video parts.`,
+	Short: "A small utility to automatically detect and join video segments from DJI drones.",
+	Long:  `A small utility to automatically detect and join video segments from DJI drones.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
