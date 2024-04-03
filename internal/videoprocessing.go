@@ -131,15 +131,22 @@ func getMp4MergeBinaryPath() (string, error) {
 	// check if mp4-merge exists
 	mp4BinaryFileNameFromPackage := "mp4-merge"
 	path, err := util.ExecCommand("which", mp4BinaryFileNameFromPackage)
+	if err == nil {
+		return path, nil
+	}
+
+	pathToMp4Merge := filepath.Join(tmpDir, Mp4BinaryFileName)
+	path, err = util.ExecCommand("which", mp4BinaryFileNameFromPackage)
+	if err == nil {
+		return path, nil
+	}
+
+	fmt.Printf("mp4-merge not found, downloading to %v...\n", tmpDir)
+	err = downloadMp4Merge(pathToMp4Merge)
 	if err != nil {
-		fmt.Printf("mp4-merge not found, downloading to %v...\n", tmpDir)
-		pathToMp4Merge := filepath.Join(tmpDir, Mp4BinaryFileName)
-		err = downloadMp4Merge(pathToMp4Merge)
-		if err != nil {
-			return "", err
-		} else {
-			path = pathToMp4Merge
-		}
+		return "", err
+	} else {
+		path = pathToMp4Merge
 	}
 	return path, nil
 }
