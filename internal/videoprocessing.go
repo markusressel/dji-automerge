@@ -282,14 +282,15 @@ func getLastFrame(file string) (string, error) {
 
 	sseof := 0.3
 
-	err = fmt.Errorf("error")
-	for err != nil && sseof < 3.0 {
+	for sseof < 3.0 {
 		sseofStr := strconv.FormatFloat(sseof, 'f', -1, 64)
 		sseofStr = "-" + sseofStr
 		_, err = util.ExecCommand("ffmpeg", "-sseof", sseofStr, "-i", file, "-vsync", "0", "-q:v", "31", "-update", "true", targetPath)
 		_, statErr := os.Stat(targetPath)
 		if err != nil || statErr != nil {
 			sseof += 0.2
+		} else {
+			break
 		}
 	}
 
