@@ -24,9 +24,13 @@ This tool aims to automate this by automatically detecting and joining video fil
 
 ## How it works
 
-dji-automerge works by comparing the first and last frame of each video segment
-and joining them if they are considered "similar enough". The similarity of the
+dji-automerge works by extracting the first and last frame of each video segment to `/tmp/dji-automerge` and comparing
+their similarity. If the last frame of A is similar to the first frame of B, A and B are joined. The similarity of the
 frames is determined using [vitali-fedulov/images4](https://github.com/vitali-fedulov/images4).
+
+Video segments are joined using [mp4-merge](https://github.com/gyroflow/mp4-merge). If this is already present in
+your `PATH` it will be used, otherwise
+it will be downloaded automatically to `/tmp/dji-automerge`.
 
 # Dependencies
 
