@@ -272,14 +272,23 @@ func getLastFrame(file string) (string, error) {
 
 	targetPath := tmpDir + "/" + filename
 
+	_, err := os.Stat(targetPath)
+	if err == nil {
+		err = os.Remove(targetPath)
+		if err != nil {
+			return "", err
+		}
+	}
+
 	sseof := 0.3
 
-	var err = fmt.Errorf("error")
+	err = fmt.Errorf("error")
 	for err != nil && sseof < 3.0 {
 		sseofStr := strconv.FormatFloat(sseof, 'f', -1, 64)
 		sseofStr = "-" + sseofStr
 		_, err = util.ExecCommand("ffmpeg", "-sseof", sseofStr, "-i", file, "-vsync", "0", "-q:v", "31", "-update", "true", targetPath)
-		if err != nil {
+		_, statErr := os.Stat(targetPath)
+		if err != nil || statErr != nil {
 			sseof += 0.2
 		}
 	}
@@ -295,7 +304,7 @@ func getFirstFrame(file string) (string, error) {
 
 	targetPath := tmpDir + "/" + filename
 
-	_, err := util.ExecCommand("ffmpeg", "-i", file, "-vf", "scale=iw*sar:ih,setsar=1", "-vframes", "1", targetPath)
+	_, err := util.ExecCommand("ffmpeg", "-y", "-i", file, "-vf", "scale=iw*sar:ih,setsar=1", "-vframes", "1", targetPath)
 	return targetPath, err
 }
 
