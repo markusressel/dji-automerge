@@ -16,6 +16,13 @@ This tool aims to automate this by automatically detecting and joining video fil
 
 ## How to use
 
+### Prerequisites
+
+dji-automerge requires `ffmpeg` in your `$PATH` to work. If you don't have it installed yet,
+see: https://ffmpeg.org/download.html
+
+### Installation
+
 ```shell script
 > git clone https://github.com/markusressel/dji-automerge.git
 > make build
@@ -29,7 +36,7 @@ their similarity. If the last frame of A is similar to the first frame of B, A a
 frames is determined using [vitali-fedulov/images4](https://github.com/vitali-fedulov/images4).
 
 Video segments are joined using [mp4-merge](https://github.com/gyroflow/mp4-merge). If this is already present in
-your `PATH` it will be used, otherwise
+your `$PATH` it will be used, otherwise
 it will be downloaded automatically to `/tmp/dji-automerge`.
 
 # Dependencies
