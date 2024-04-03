@@ -17,7 +17,7 @@ This tool aims to automate this by automatically detecting and joining video fil
 ## How to use
 
 ```shell script
-> git clone $repo
+> git clone https://github.com/markusressel/dji-automerge.git
 > make build
 > ./bin/dji-automerge --input /path/to/videos/ [--output /path/to/output/]
 ```
