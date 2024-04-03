@@ -130,8 +130,8 @@ func getMp4MergeBinaryPath() (string, error) {
 	}
 
 	pathToMp4Merge := filepath.Join(tmpDir, Mp4BinaryFileName)
-	path, err = util.ExecCommand("which", mp4BinaryFileNameFromPackage)
-	if err == nil {
+	info, err := os.Stat(pathToMp4Merge)
+	if err == nil && !info.IsDir() {
 		return path, nil
 	}
 
