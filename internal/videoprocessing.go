@@ -70,7 +70,6 @@ func Process(inputPath string, outputPath string) error {
 	}
 
 	for _, group := range matchingVideos {
-		fmt.Printf("Joining %v videos\n", len(group.Parts))
 		err = joinVideosInGroup(group, outputPath)
 		if err != nil {
 			return err
@@ -84,7 +83,7 @@ func Process(inputPath string, outputPath string) error {
 	}
 
 	// cleanup
-	//_, err = removeTmpDir(tmpDir)
+	cleanupTmpDir()
 
 	return err
 }
@@ -101,8 +100,29 @@ func createTmpDir() (string, error) {
 	return util.ExecCommand("mkdir", "-p", tmpDir)
 }
 
-func removeTmpDir(path string) (string, error) {
-	return util.ExecCommand("rm", "-r", path)
+func cleanupTmpDir() {
+	// remove all PNG files in tmpDir
+	entries, err := os.ReadDir(tmpDir)
+	if err != nil {
+		return
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		if Mp4BinaryFileName == entry.Name() {
+			// keep mp4-merge binary for later runs
+			continue
+		}
+
+		// ignore non-png files
+		if !strings.HasSuffix(strings.ToLower(entry.Name()), ".png") {
+			continue
+		}
+
+		_ = os.Remove(filepath.Join(tmpDir, entry.Name()))
+	}
 }
 
 func moveSourceFilesInGroup(group VideoGroup, path string) error {
@@ -170,7 +190,7 @@ func getMp4MergeBinaryPath() (string, error) {
 	mp4BinaryFileNameFromPackage := "mp4-merge"
 
 	pathToMp4Merge, err := exec.LookPath(mp4BinaryFileNameFromPackage)
-	if err != nil {
+	if err == nil {
 		return pathToMp4Merge, nil
 	}
 
@@ -269,13 +289,14 @@ func matchInputFiles(files []string) ([]VideoGroup, error) {
 			} else {
 				currentVideoGroup.Parts = append(currentVideoGroup.Parts, nextVideoData)
 			}
-			fmt.Printf("Found match for '%v' and '%v'\n", currentVideoData.Name, nextVideoData.Name)
+
+			fmt.Printf("Found match for '%v' and '%v' with similarity metrics: (%v) (%v) (%v) \n", currentVideoData.Name, nextVideoData.Name, similarity.Ypercent, similarity.CbPercent, similarity.CrPercent)
 		} else {
 			if currentVideoGroup != nil {
 				result = append(result, *currentVideoGroup)
 				currentVideoGroup = nil
 			}
-			fmt.Printf("No matc between '%v' and '%v'\n", currentVideoData.Name, nextVideoData.Name)
+			fmt.Printf("No match between '%v' and '%v'\n", currentVideoData.Name, nextVideoData.Name)
 		}
 	}
 	if currentVideoGroup != nil {
