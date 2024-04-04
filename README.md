@@ -2,6 +2,8 @@
 
 A small utility to automatically detect and join video segments from DJI drones.
 
+[![asciicast](https://asciinema.org/a/650884.svg)](https://asciinema.org/a/650884)
+
 ## Why
 
 When you record a video with a DJI drone, the video is split into multiple parts where each of the files is at
