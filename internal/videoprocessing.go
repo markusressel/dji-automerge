@@ -311,7 +311,7 @@ func matchInputFiles(files []string) ([]VideoGroup, error) {
 				currentVideoGroup.Parts = append(currentVideoGroup.Parts, nextVideoData)
 			}
 
-			fmt.Printf("Found match for '%v' and '%v' with similarity metrics: (%v) (%v) (%v) \n", currentVideoData.Name, nextVideoData.Name, similarity.Ypercent, similarity.CbPercent, similarity.CrPercent)
+			fmt.Printf("End of '%v' matches start of '%v' (Metrics: (%v) (%v) (%v))\n", currentVideoData.Name, nextVideoData.Name, similarity.Ypercent, similarity.CbPercent, similarity.CrPercent)
 		} else {
 			if currentVideoGroup != nil {
 				result = append(result, *currentVideoGroup)
