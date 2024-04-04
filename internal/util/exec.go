@@ -59,10 +59,10 @@ func ExecCommandEnv(env []string, attach bool, command string, args ...string) (
 
 	if err != nil {
 		fmt.Println(err.Error())
-		fmt.Println(string(stderr.Bytes()))
+		fmt.Println(stderr.String())
 		log.Fatal(stderr)
 		return "", err
 	}
 
-	return string(stdout.Bytes()), nil
+	return stdout.String(), nil
 }
