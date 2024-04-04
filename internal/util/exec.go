@@ -24,11 +24,11 @@ func ExecCommand(command string, args ...string) (string, error) {
 
 	if err != nil {
 		fmt.Println(err.Error())
-		fmt.Println(string(stderr.Bytes()))
+		fmt.Println(stderr.String())
 		return "", err
 	}
 
-	result := string(stdout.Bytes())
+	result := stdout.String()
 	result = strings.TrimSpace(result)
 
 	return result, nil
