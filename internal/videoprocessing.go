@@ -22,6 +22,33 @@ var (
 	tmpDir = "/tmp/dji-automerge"
 )
 
+var (
+	// IconSize Image resolution of the icon is very small
+	// (11x11 pixels), therefore original image details
+	// are lost in downsampling, except when source images
+	// have very low resolution (e.g. favicons or simple
+	// logos). This is useful from the privacy perspective
+	// if you are to use generated icons in a large searchable
+	// database.
+	IconSize = images4.IconSize
+
+	// Cutoff value for color distance.
+	colorDiff = 50
+	// Cutoff coefficient for Euclidean distance (squared).
+	euclCoeff = 0.2
+	// Coefficient of sensitivity for Cb/Cr channels vs Y.
+	chanCoeff = 2.0
+
+	// Proportion similarity threshold (0%).
+	// We expect parts of the same image to have the exact same dimensions.
+	thresholdProp = 0.01
+
+	// Euclidean distance threshold (squared) for Y-channel.
+	thresholdY = float64(IconSize*IconSize) * float64(colorDiff*colorDiff) * euclCoeff
+	// Euclidean distance threshold (squared) for Cb and Cr channels.
+	thresholdCbCr = thresholdY * chanCoeff
+)
+
 func Process(inputPath string, outputPath string) error {
 	checkPrerequisites()
 
@@ -229,12 +256,12 @@ func matchInputFiles(files []string) ([]VideoGroup, error) {
 		currentVideoData := videoDataItems[i]
 		nextVideoData := videoDataItems[i+1]
 
-		difference, err := compareImages(currentVideoData.LastFrame, nextVideoData.FirstFrame)
+		similarity, err := compareImages(currentVideoData.LastFrame, nextVideoData.FirstFrame)
 		if err != nil {
 			return nil, err
 		}
 
-		if difference == 0 {
+		if similarity.Similar() {
 			if currentVideoGroup == nil {
 				currentVideoGroup = &VideoGroup{
 					Parts: []VideoData{currentVideoData, nextVideoData},
@@ -258,28 +285,67 @@ func matchInputFiles(files []string) ([]VideoGroup, error) {
 	return result, nil
 }
 
-func compareImages(imagePath1, imagePath2 string) (int64, error) {
+type Similarity struct {
+	PropMetric            float64
+	ProportionsPercentage float64
+
+	Y         float64
+	Ypercent  float64
+	Cb        float64
+	CbPercent float64
+	Cr        float64
+	CrPercent float64
+}
+
+func compareImages(imagePath1, imagePath2 string) (Similarity, error) {
 	// Opening and decoding images. Silently discarding errors.
 	img1, err := images4.Open(imagePath1)
 	if err != nil {
-		return -1, err
+		return Similarity{}, err
 	}
 	img2, err := images4.Open(imagePath2)
 	if err != nil {
-		return -1, err
+		return Similarity{}, err
 	}
 
 	// Icons are compact hash-like image representations.
-	icon1 := images4.Icon(img1)
-	icon2 := images4.Icon(img2)
+	iconA := images4.Icon(img1)
+	iconB := images4.Icon(img2)
 
 	// Comparison. Images are not used directly.
 	// Use func CustomSimilar for different precision.
-	if images4.Similar(icon1, icon2) {
-		return 0, nil
-	} else {
-		return 1, nil
+
+	propMetric := images4.PropMetric(iconA, iconB)
+	proportionsPercentage := propMetric / thresholdProp
+
+	m1, m2, m3 := images4.EucMetric(iconA, iconB)
+
+	mp1 := m1 / thresholdY
+	mp2 := m2 / thresholdCbCr
+	mp3 := m3 / thresholdCbCr
+
+	return Similarity{
+		PropMetric:            propMetric,
+		ProportionsPercentage: proportionsPercentage,
+
+		Y:         m1,
+		Ypercent:  mp1,
+		Cb:        m2,
+		CbPercent: mp2,
+		Cr:        m3,
+		CrPercent: mp3,
+	}, nil
+}
+
+func (s Similarity) Similar() bool {
+	propSimilar := s.PropMetric <= thresholdProp
+	if !propSimilar {
+		return false
 	}
+	eucSimilar := s.Y < thresholdY && // Luma as most sensitive.
+		s.Cb < thresholdCbCr &&
+		s.Cr < thresholdCbCr
+	return eucSimilar
 }
 
 func getLastFrame(file string) (string, error) {

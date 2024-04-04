@@ -38,7 +38,8 @@ frames is determined using [vitali-fedulov/images4](https://github.com/vitali-fe
 Video segments are joined using [mp4-merge](https://github.com/gyroflow/mp4-merge). If this is already present in
 your `$PATH` it will be used, otherwise it will be downloaded automatically to `/tmp/dji-automerge`.
 
-The resulting joined video files are saved to `<output>/`.
+The resulting joined video files are saved to `<output>/`, the name of the file will be the
+name of the first part and a `_joined` suffix, f.ex.: `DJI_0001_joined.mp4`.
 
 After joining the video segments, the original files are moved to `<output>/Sources/`.
 
