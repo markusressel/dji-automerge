@@ -17,15 +17,15 @@ const (
 )
 
 var (
+	// used to store temporary image files
+	// and the mp4-merge binary
 	tmpDir = "/tmp/dji-automerge"
 )
 
 func Process(inputPath string, outputPath string) error {
 	checkPrerequisites()
 
-	tmpDir = "/tmp/dji-automerge"
-
-	_, err := createTmpDir(tmpDir)
+	_, err := createTmpDir()
 	if err != nil {
 		return err
 	}
@@ -70,8 +70,8 @@ func checkPrerequisites() {
 	}
 }
 
-func createTmpDir(dir string) (string, error) {
-	return util.ExecCommand("mkdir", "-p", dir)
+func createTmpDir() (string, error) {
+	return util.ExecCommand("mkdir", "-p", tmpDir)
 }
 
 func removeTmpDir(path string) (string, error) {
