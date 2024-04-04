@@ -86,7 +86,7 @@ func Process(inputPath string, outputPath string) error {
 			return fmt.Errorf("error joining videos: %v", err)
 		}
 
-		fmt.Printf("Moving source files to %v\n", outputPath)
+		fmt.Printf("Moving %v to '<output>/Sources' ...\n", group.Parts)
 		err = moveSourceFilesInGroup(group, outputPath)
 		if err != nil {
 			return fmt.Errorf("error moving source files: %v", err)
@@ -96,6 +96,8 @@ func Process(inputPath string, outputPath string) error {
 	// cleanup
 	fmt.Println("Cleaning up temporary files...")
 	cleanupTmpDir()
+
+	fmt.Printf("All done! Merged videos are in %v\n", outputPath)
 
 	return err
 }
