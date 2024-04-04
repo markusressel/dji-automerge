@@ -44,13 +44,13 @@ func compareImages(imagePath1, imagePath2 string) (Similarity, error) {
 	// Use func CustomSimilar for different precision.
 
 	propMetric := images4.PropMetric(iconA, iconB)
-	proportionsPercentage := propMetric / thresholdProp
+	proportionsPercentage := 1 - propMetric/thresholdProp
 
 	m1, m2, m3 := images4.EucMetric(iconA, iconB)
 
-	mp1 := m1 / thresholdY
-	mp2 := m2 / thresholdCbCr
-	mp3 := m3 / thresholdCbCr
+	mp1 := 1 - m1/thresholdY
+	mp2 := 1 - m2/thresholdCbCr
+	mp3 := 1 - m3/thresholdCbCr
 
 	return Similarity{
 		PropMetric:            propMetric,

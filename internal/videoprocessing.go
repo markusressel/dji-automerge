@@ -86,7 +86,11 @@ func Process(inputPath string, outputPath string) error {
 			return fmt.Errorf("error joining videos: %v", err)
 		}
 
-		fmt.Printf("Moving %v to '<output>/Sources' ...\n", group.Parts)
+		partNames := make([]string, 0)
+		for _, part := range group.Parts {
+			partNames = append(partNames, part.Name)
+		}
+		fmt.Printf("Moving %v to '<output>/Sources' ...\n", partNames)
 		err = moveSourceFilesInGroup(group, outputPath)
 		if err != nil {
 			return fmt.Errorf("error moving source files: %v", err)
@@ -313,7 +317,9 @@ func matchInputFiles(files []string) ([]VideoGroup, error) {
 				currentVideoGroup.Parts = append(currentVideoGroup.Parts, nextVideoData)
 			}
 
-			fmt.Printf("End of '%v' matches start of '%v' (Metrics: (%v) (%v) (%v))\n", currentVideoData.Name, nextVideoData.Name, similarity.Ypercent, similarity.CbPercent, similarity.CrPercent)
+			fmt.Printf("End of '%v' matches start of '%v' (Metrics: (%v), (%v) (%v) (%v))\n",
+				currentVideoData.Name, nextVideoData.Name,
+				similarity.ProportionsPercentage, similarity.Ypercent, similarity.CbPercent, similarity.CrPercent)
 		} else {
 			if currentVideoGroup != nil {
 				result = append(result, *currentVideoGroup)
