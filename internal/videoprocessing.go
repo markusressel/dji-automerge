@@ -54,31 +54,36 @@ func Process(inputPath string, outputPath string) error {
 
 	_, err := createTmpDir()
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating tmp dir in %v: %v", tmpDir, err)
 	}
 
-	fmt.Printf("Searching for videos in %v\n", inputPath)
+	fmt.Printf("Searching for video files in %v...\n", inputPath)
 	files, err := getInputFiles(inputPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading input files: %v", err)
 	}
 
-	fmt.Printf("Found %v files\n", len(files))
+	if len(files) == 0 {
+		fmt.Println("No video files found.")
+		return nil
+	}
+
+	fmt.Printf("Found %v files, analyzing to detect related video segmemts...\n", len(files))
 	matchingVideos, err := matchInputFiles(files)
 	if err != nil {
-		return err
+		return fmt.Errorf("error matching video files: %v", err)
 	}
 
 	for _, group := range matchingVideos {
 		err = joinVideosInGroup(group, outputPath)
 		if err != nil {
-			return err
+			return fmt.Errorf("error joining videos: %v", err)
 		}
 
 		fmt.Printf("Moving source files to %v\n", outputPath)
 		err = moveSourceFilesInGroup(group, outputPath)
 		if err != nil {
-			return err
+			return fmt.Errorf("error moving source files: %v", err)
 		}
 	}
 
@@ -125,37 +130,19 @@ func cleanupTmpDir() {
 	}
 }
 
-func moveSourceFilesInGroup(group VideoGroup, path string) error {
-	sourcesPath := path + "/Sources"
-
-	err := os.MkdirAll(sourcesPath, os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	for _, part := range group.Parts {
-		// move file to path
-		targetPath := sourcesPath + "/" + filepath.Base(part.Path)
-
-		err = os.Rename(part.Path, targetPath)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func joinVideosInGroup(group VideoGroup, path string) error {
 	partNames := make([]string, 0)
 	for _, part := range group.Parts {
 		partNames = append(partNames, part.Name)
 	}
-	fmt.Printf("Joining videos: %v\n", partNames)
 
-	outputFileName := group.Parts[0].Path
-	outputFileName = outputFileName[:len(outputFileName)-4] + "_merged.mp4"
+	outputFilePath := group.Parts[0].Path
+	outputFilePath = outputFilePath[:len(outputFilePath)-4] + "_merged.mp4"
 
-	err := mergeVideos(outputFileName, group.Parts)
+	outputFileName := filepath.Base(outputFilePath)
+	fmt.Printf("Joining parts %v to %v...\n", partNames, outputFileName)
+
+	err := mergeVideos(outputFilePath, group.Parts)
 	if err != nil {
 		return err
 	}
@@ -165,7 +152,7 @@ func joinVideosInGroup(group VideoGroup, path string) error {
 func mergeVideos(name string, parts []VideoData) error {
 	pathToMp4Merge, err := getMp4MergeBinaryPath()
 	if err != nil {
-		return err
+		return fmt.Errorf("error resolving mp4-merge binary: %v", err)
 	}
 
 	partFiles := make([]string, 0)
@@ -237,6 +224,33 @@ type VideoData struct {
 	LastFrame  string
 }
 
+func getInputFiles(path string) ([]string, error) {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+	var result []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		// ignore non-mp4 files
+		if !strings.HasSuffix(strings.ToLower(entry.Name()), ".mp4") {
+			continue
+		}
+
+		// ignore already joined files
+		if strings.HasSuffix(strings.ToLower(entry.Name()), JoinedSuffix+".mp4") {
+			continue
+		}
+
+		result = append(result, filepath.Join(path, entry.Name()))
+	}
+
+	return result, nil
+}
+
 func matchInputFiles(files []string) ([]VideoGroup, error) {
 	// TODO: detect video parts using ffmpeg first and last frame
 
@@ -306,67 +320,36 @@ func matchInputFiles(files []string) ([]VideoGroup, error) {
 	return result, nil
 }
 
-type Similarity struct {
-	PropMetric            float64
-	ProportionsPercentage float64
+func moveSourceFilesInGroup(group VideoGroup, path string) error {
+	sourcesPath := path + "/Sources"
 
-	Y         float64
-	Ypercent  float64
-	Cb        float64
-	CbPercent float64
-	Cr        float64
-	CrPercent float64
+	err := os.MkdirAll(sourcesPath, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	for _, part := range group.Parts {
+		// move file to path
+		targetPath := sourcesPath + "/" + filepath.Base(part.Path)
+
+		err = os.Rename(part.Path, targetPath)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func compareImages(imagePath1, imagePath2 string) (Similarity, error) {
-	// Opening and decoding images. Silently discarding errors.
-	img1, err := images4.Open(imagePath1)
-	if err != nil {
-		return Similarity{}, err
-	}
-	img2, err := images4.Open(imagePath2)
-	if err != nil {
-		return Similarity{}, err
-	}
+func getFirstFrame(file string) (string, error) {
+	// get filename of targetPath
+	filename := filepath.Base(file)
+	filename = filename + ".firstFrame"
+	filename = filename + ".png"
 
-	// Icons are compact hash-like image representations.
-	iconA := images4.Icon(img1)
-	iconB := images4.Icon(img2)
+	targetPath := tmpDir + "/" + filename
 
-	// Comparison. Images are not used directly.
-	// Use func CustomSimilar for different precision.
-
-	propMetric := images4.PropMetric(iconA, iconB)
-	proportionsPercentage := propMetric / thresholdProp
-
-	m1, m2, m3 := images4.EucMetric(iconA, iconB)
-
-	mp1 := m1 / thresholdY
-	mp2 := m2 / thresholdCbCr
-	mp3 := m3 / thresholdCbCr
-
-	return Similarity{
-		PropMetric:            propMetric,
-		ProportionsPercentage: proportionsPercentage,
-
-		Y:         m1,
-		Ypercent:  mp1,
-		Cb:        m2,
-		CbPercent: mp2,
-		Cr:        m3,
-		CrPercent: mp3,
-	}, nil
-}
-
-func (s Similarity) Similar() bool {
-	propSimilar := s.PropMetric <= thresholdProp
-	if !propSimilar {
-		return false
-	}
-	eucSimilar := s.Y < thresholdY && // Luma as most sensitive.
-		s.Cb < thresholdCbCr &&
-		s.Cr < thresholdCbCr
-	return eucSimilar
+	_, err := util.ExecCommand("ffmpeg", "-y", "-i", file, "-vf", "scale=iw*sar:ih,setsar=1", "-vframes", "1", targetPath)
+	return targetPath, err
 }
 
 func getLastFrame(file string) (string, error) {
@@ -399,43 +382,4 @@ func getLastFrame(file string) (string, error) {
 	}
 
 	return targetPath, err
-}
-
-func getFirstFrame(file string) (string, error) {
-	// get filename of targetPath
-	filename := filepath.Base(file)
-	filename = filename + ".firstFrame"
-	filename = filename + ".png"
-
-	targetPath := tmpDir + "/" + filename
-
-	_, err := util.ExecCommand("ffmpeg", "-y", "-i", file, "-vf", "scale=iw*sar:ih,setsar=1", "-vframes", "1", targetPath)
-	return targetPath, err
-}
-
-func getInputFiles(path string) ([]string, error) {
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return nil, err
-	}
-	var result []string
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-
-		// ignore non-mp4 files
-		if !strings.HasSuffix(strings.ToLower(entry.Name()), ".mp4") {
-			continue
-		}
-
-		// ignore already joined files
-		if strings.HasSuffix(strings.ToLower(entry.Name()), JoinedSuffix+".mp4") {
-			continue
-		}
-
-		result = append(result, filepath.Join(path, entry.Name()))
-	}
-
-	return result, nil
 }
