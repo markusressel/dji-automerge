@@ -68,7 +68,7 @@ func Process(inputPath string, outputPath string) error {
 		return nil
 	}
 
-	fmt.Printf("Found %v files, analyzing to detect related video segmemts...\n", len(files))
+	fmt.Printf("Found %v files, analyzing to detect related video segments...\n", len(files))
 	matchingVideos, err := matchInputFiles(files)
 	if err != nil {
 		return fmt.Errorf("error matching video files: %v", err)
