@@ -1,6 +1,9 @@
 BINARY_NAME=dji-automerge
 OUTPUT_DIR=bin/
 
+test:   ## Run all tests
+	@go clean --testcache && go test -v ./...
+
 build: clean
 	go build -o ${OUTPUT_DIR}${BINARY_NAME} main.go
 
