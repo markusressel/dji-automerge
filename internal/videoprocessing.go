@@ -74,6 +74,12 @@ func Process(inputPath string, outputPath string) error {
 		return fmt.Errorf("error matching video files: %v", err)
 	}
 
+	if len(matchingVideos) == 0 {
+		fmt.Println("No video groups found, nothing to merge.")
+		return nil
+	}
+
+	fmt.Printf("Found %v video groups, joining videos...\n", len(matchingVideos))
 	for _, group := range matchingVideos {
 		err = joinVideosInGroup(group, outputPath)
 		if err != nil {
@@ -88,6 +94,7 @@ func Process(inputPath string, outputPath string) error {
 	}
 
 	// cleanup
+	fmt.Println("Cleaning up temporary files...")
 	cleanupTmpDir()
 
 	return err
