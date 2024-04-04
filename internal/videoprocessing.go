@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/vitali-fedulov/images4"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -19,6 +20,8 @@ var (
 )
 
 func Process(inputPath string, outputPath string) error {
+	checkPrerequisites()
+
 	tmpDir = "/tmp/dji-automerge"
 
 	_, err := createTmpDir(tmpDir)
@@ -56,6 +59,14 @@ func Process(inputPath string, outputPath string) error {
 	//_, err = removeTmpDir(tmpDir)
 
 	return err
+}
+
+func checkPrerequisites() {
+	_, err := exec.LookPath("ffmpeg")
+	if err != nil {
+		fmt.Println("ffmpeg not found, please install ffmpeg first.")
+		os.Exit(1)
+	}
 }
 
 func createTmpDir(dir string) (string, error) {
@@ -124,8 +135,9 @@ func mergeVideos(name string, parts []VideoData) error {
 func getMp4MergeBinaryPath() (string, error) {
 	// check if mp4-merge exists
 	mp4BinaryFileNameFromPackage := "mp4-merge"
-	path, err := util.ExecCommand("which", mp4BinaryFileNameFromPackage)
-	if err == nil {
+
+	path, err := exec.LookPath(mp4BinaryFileNameFromPackage)
+	if err != nil {
 		return path, nil
 	}
 
