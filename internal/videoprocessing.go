@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -49,7 +50,13 @@ var (
 	thresholdCbCr = thresholdY * chanCoeff
 )
 
-func Process(inputPath string, outputPath string) error {
+type ProcessingParams struct {
+	InputPath  string
+	OutputPath string
+	Filters    []string
+}
+
+func Process(params ProcessingParams) error {
 	checkPrerequisites()
 
 	_, err := createTmpDir()
@@ -57,8 +64,8 @@ func Process(inputPath string, outputPath string) error {
 		return fmt.Errorf("error creating tmp dir in %v: %v", tmpDir, err)
 	}
 
-	fmt.Printf("Searching for video files in %v...\n", inputPath)
-	files, err := getInputFiles(inputPath)
+	fmt.Printf("Searching for video files in %v...\n", params.InputPath)
+	files, err := getInputFiles(params.InputPath, params.Filters)
 	if err != nil {
 		return fmt.Errorf("error reading input files: %v", err)
 	}
@@ -81,7 +88,7 @@ func Process(inputPath string, outputPath string) error {
 
 	fmt.Printf("Found %v video groups, joining videos...\n", len(matchingVideos))
 	for _, group := range matchingVideos {
-		err = joinVideosInGroup(group, outputPath)
+		err = joinVideosInGroup(group, params.OutputPath)
 		if err != nil {
 			return fmt.Errorf("error joining videos: %v", err)
 		}
@@ -91,7 +98,7 @@ func Process(inputPath string, outputPath string) error {
 			partNames = append(partNames, part.Name)
 		}
 		fmt.Printf("Moving %v to '<output>/Sources' ...\n", partNames)
-		err = moveSourceFilesInGroup(group, outputPath)
+		err = moveSourceFilesInGroup(group, params.OutputPath)
 		if err != nil {
 			return fmt.Errorf("error moving source files: %v", err)
 		}
@@ -101,7 +108,7 @@ func Process(inputPath string, outputPath string) error {
 	fmt.Println("Cleaning up temporary files...")
 	cleanupTmpDir()
 
-	fmt.Printf("All done! Merged videos are in %v\n", outputPath)
+	fmt.Printf("All done! Merged videos are in %v\n", params.OutputPath)
 
 	return err
 }
@@ -237,7 +244,7 @@ type VideoData struct {
 	LastFrame  string
 }
 
-func getInputFiles(path string) ([]string, error) {
+func getInputFiles(path string, filters []string) ([]string, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
@@ -256,6 +263,17 @@ func getInputFiles(path string) ([]string, error) {
 		// ignore already joined files
 		if strings.HasSuffix(strings.ToLower(entry.Name()), JoinedSuffix+".mp4") {
 			continue
+		}
+
+		// apply custom filters
+		for _, filter := range filters {
+			matchString, err := regexp.MatchString(filter, entry.Name())
+			if err != nil {
+				return nil, err
+			}
+			if matchString {
+				continue
+			}
 		}
 
 		result = append(result, filepath.Join(path, entry.Name()))

@@ -2,14 +2,17 @@ package cmd
 
 import (
 	"dji-automerge/internal"
+	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
+	"regexp"
 )
 
 var Input string
 var Output string
+var Filters []string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -41,7 +44,20 @@ var RootCmd = &cobra.Command{
 			return err
 		}
 
-		return internal.Process(input, output)
+		// check if filters are valid regex patterns
+		for _, filter := range Filters {
+			_, err := regexp.Compile(filter)
+			if err != nil {
+				return errors.Join(errors.New("invalid filter \""+filter+"\", must be a valid regex pattern"), err)
+			}
+		}
+
+		params := internal.ProcessingParams{
+			InputPath:  input,
+			OutputPath: output,
+			Filters:    Filters,
+		}
+		return internal.Process(params)
 	},
 }
 
@@ -61,6 +77,12 @@ func Execute() {
 		"",
 		"Output directory",
 	)
+
+	RootCmd.PersistentFlags().StringArrayVarP(
+		&Filters,
+		"filter", "f",
+		[]string{},
+		"Filters to apply to the video files")
 
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)

@@ -28,7 +28,7 @@ see: https://ffmpeg.org/download.html
 ```shell script
 > git clone https://github.com/markusressel/dji-automerge.git
 > make build
-> ./bin/dji-automerge --input /path/to/videos/ [--output /path/to/videos/]
+> ./bin/dji-automerge --input /path/to/videos/ [--filter ".*stabilized.*"] [--output /path/to/videos/]
 ```
 
 ## How it works
