@@ -3,7 +3,7 @@ module dji-automerge
 go 1.22
 
 require (
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/vitali-fedulov/images4 v1.3.1
 )
 
