@@ -267,7 +267,8 @@ func getInputFiles(path string, filters []string) ([]string, error) {
 
 		// apply custom filters
 		for _, filter := range filters {
-			matchString, err := regexp.MatchString(filter, entry.Name())
+			var matchString bool
+			matchString, err = regexp.MatchString(filter, entry.Name())
 			if err != nil {
 				return nil, err
 			}
