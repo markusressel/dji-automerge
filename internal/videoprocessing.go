@@ -283,8 +283,6 @@ func getInputFiles(path string, filters []string) ([]string, error) {
 }
 
 func matchInputFiles(files []string) ([]VideoGroup, error) {
-	// TODO: detect video parts using ffmpeg first and last frame
-
 	result := make([]VideoGroup, 0)
 
 	var videoDataItems []VideoData
@@ -326,7 +324,8 @@ func matchInputFiles(files []string) ([]VideoGroup, error) {
 			return nil, err
 		}
 
-		if similarity.Similar() {
+		bothPartsBelongToTheSameRecording := doBothFramesBelongToTheSameRecording(currentVideoData, nextVideoData)
+		if similarity.Similar() && bothPartsBelongToTheSameRecording {
 			if currentVideoGroup == nil {
 				currentVideoGroup = &VideoGroup{
 					Parts: []VideoData{currentVideoData, nextVideoData},
@@ -351,6 +350,17 @@ func matchInputFiles(files []string) ([]VideoGroup, error) {
 	}
 
 	return result, nil
+}
+
+func doBothFramesBelongToTheSameRecording(data1 VideoData, data2 VideoData) bool {
+	// if the first file is smaller than 3.5 GB, its highly unlikely to have a followup part,
+	// since videos are usually split at around 3.8GB
+	threeGigaBytesInBytes := int64(3.5 * 1024 * 1024 * 1024)
+	if data1.Size < threeGigaBytesInBytes {
+		return false
+	}
+
+	return true
 }
 
 func moveSourceFilesInGroup(group VideoGroup, path string) error {
