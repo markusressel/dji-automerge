@@ -267,7 +267,8 @@ func getInputFiles(path string, filters []string) ([]string, error) {
 
 		// apply custom filters
 		for _, filter := range filters {
-			matchString, err := regexp.MatchString(filter, entry.Name())
+			var matchString bool
+			matchString, err = regexp.MatchString(filter, entry.Name())
 			if err != nil {
 				return nil, err
 			}
@@ -356,11 +357,7 @@ func doBothFramesBelongToTheSameRecording(data1 VideoData, data2 VideoData) bool
 	// if the first file is smaller than 3.5 GB, its highly unlikely to have a followup part,
 	// since videos are usually split at around 3.8GB
 	threeGigaBytesInBytes := int64(3.5 * 1024 * 1024 * 1024)
-	if data1.Size < threeGigaBytesInBytes {
-		return false
-	}
-
-	return true
+	return data1.Size >= threeGigaBytesInBytes
 }
 
 func moveSourceFilesInGroup(group VideoGroup, path string) error {
