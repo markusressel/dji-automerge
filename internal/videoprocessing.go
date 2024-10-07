@@ -266,14 +266,16 @@ func getInputFiles(path string, filters []string) ([]string, error) {
 		}
 
 		// apply custom filters
+		matchesFilters := true
 		for _, filter := range filters {
 			matchString, err := regexp.MatchString(filter, entry.Name())
 			if err != nil {
 				return nil, err
 			}
-			if matchString {
-				continue
-			}
+			matchesFilters = matchesFilters && matchString
+		}
+		if !matchesFilters {
+			continue
 		}
 
 		result = append(result, filepath.Join(path, entry.Name()))
